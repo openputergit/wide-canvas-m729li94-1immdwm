@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMI and GDP Data Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-gray-900 text-white p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-2">
+                <i class="bi bi-graph-up text-2xl"></i>
+                <h1 class="text-xl font-bold">PMI and GDP Data Dashboard</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <span>Currency: USD</span>
+                    <i class="bi bi-caret-down-fill"></i>
+                </div>
+                <div class="text-gray-400">Feb 1, 2024 - Feb 10, 2025</div>
+            </div>
+        </div>
+
+        <!-- PMI Data Input Form -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-6">
+            <h2 class="text-lg font-semibold mb-4">Enter PMI Data</h2>
+            <form id="pmiDataForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block mb-2">Actual Data</label>
+                    <input type="number" id="pmiActualData" step="0.1" class="w-full bg-gray-700 rounded p-2" required>
+                </div>
+                <div>
+                    <label class="block mb-2">Forecast Data</label>
+                    <input type="number" id="pmiForecastData" step="0.1" class="w-full bg-gray-700 rounded p-2" required>
+                </div>
+                <div>
+                    <label class="block mb-2">Previous Data</label>
+                    <input type="number" id="pmiPreviousData" step="0.1" class="w-full bg-gray-700 rounded p-2" required>
+                </div>
+                <div>
+                    <label class="block mb-2">Date</label>
+                    <input type="date" id="pmiDateInput" class="w-full bg-gray-700 rounded p-2" required>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Add Data</button>
+            </form>
+        </div>
+
+        <!-- PMI Chart Container -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-6">
+            <canvas id="pmiChart"></canvas>
+        </div>
+
+        <!-- GDP Data Input Form -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-6">
+            <h2 class="text-lg font-semibold mb-4">Enter GDP Data</h2>
+            <form id="gdpDataForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block mb-2">Actual Data</label>
+                    <input type="number" id="gdpActualData" step="0.1" class="w-full bg-gray-700 rounded p-2" required>
+                </div>
+                <div>
+                    <label class="block mb-2">Forecast Data</label>
+                    <input type="number" id="gdpForecastData" step="0.1" class="w-full bg-gray-700 rounded p-2" required>
+                </div>
+                <div>
+                    <label class="block mb-2">Previous Data</label>
+                    <input type="number" id="gdpPreviousData" step="0.1" class="w-full bg-gray-700 rounded p-2" required>
+                </div>
+                <div>
+                    <label class="block mb-2">Date</label>
+                    <input type="date" id="gdpDateInput" class="w-full bg-gray-700 rounded p-2" required>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Add Data</button>
+            </form>
+        </div>
+
+        <!-- GDP Chart Container -->
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <canvas id="gdpChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let pmiChart, gdpChart;
+        const pmiCtx = document.getElementById('pmiChart').getContext('2d');
+        const gdpCtx = document.getElementById('gdpChart').getContext('2d');
+        
+        // Initial data
+        const pmiData = {
+            labels: [],
+            actualData: [],
+            forecastData: [],
+            previousData: []
+        };
+
+        const gdpData = {
+            labels: [],
+            actualData: [],
+            forecastData: [],
+            previousData: []
+        };
+
+        function createChart(ctx, data, chartType, yMin, yMax) {
+            if (chartType) {
+                chartType.destroy();
+            }
+
+            chartType = new Chart(ctx, {
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Actual Data',
+                            data: data.actualData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1,
+                            type: 'bar'
+                        },
+                        {
+                            label: 'Forecast',
+                            data: data.forecastData,
+                            borderColor: 'rgba(255, 255, 255, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'white',
+                            pointRadius: 4,
+                            type: 'scatter',
+                            fill: false
+                        },
+                        {
+                            label: 'Previous Data',
+                            data: data.previousData,
+                            borderColor: 'yellow',
+                            borderWidth: 2,
+                            type: 'line',
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: yMin,
+                            max: yMax,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'white'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'white'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'white'
+                            }
+                        }
+                    }
+                }
+            });
+
+            return chartType;
+        }
+
+        // Create initial charts
+        pmiChart = createChart(pmiCtx, pmiData, pmiChart, 0, 60);
+        gdpChart = createChart(gdpCtx, gdpData, gdpChart, -2, 6);
+
+        // Handle PMI form submission
+        document.getElementById('pmiDataForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const actualValue = parseFloat(document.getElementById('pmiActualData').value);
+            const forecastValue = parseFloat(document.getElementById('pmiForecastData').value);
+            const previousValue = parseFloat(document.getElementById('pmiPreviousData').value);
+            const date = new Date(document.getElementById('pmiDateInput').value);
+            const formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+
+            // Update data
+            pmiData.labels.push(formattedDate);
+            pmiData.actualData.push(actualValue);
+            pmiData.forecastData.push(forecastValue);
+            pmiData.previousData.push(previousValue);
+
+            // Recreate chart with new data
+            pmiChart = createChart(pmiCtx, pmiData, pmiChart, 0, 60);
+
+            // Reset form
+            e.target.reset();
+        });
+
+        // Handle GDP form submission
+        document.getElementById('gdpDataForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const actualValue = parseFloat(document.getElementById('gdpActualData').value);
+            const forecastValue = parseFloat(document.getElementById('gdpForecastData').value);
+            const previousValue = parseFloat(document.getElementById('gdpPreviousData').value);
+            const date = new Date(document.getElementById('gdpDateInput').value);
+            const formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+
+            // Update data
+            gdpData.labels.push(formattedDate);
+            gdpData.actualData.push(actualValue);
+            gdpData.forecastData.push(forecastValue);
+            gdpData.previousData.push(previousValue);
+
+            // Recreate chart with new data
+            gdpChart = createChart(gdpCtx, gdpData, gdpChart, -2, 6);
+
+            // Reset form
+            e.target.reset();
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
